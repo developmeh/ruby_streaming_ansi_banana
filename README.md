@@ -2,6 +2,9 @@
 
 This application is a Sinatra-based web service with a `/live` endpoint. When invoked from `curl`, it displays a dancing ASCII banana. It uses the standard Sinatra setup for its URL configuration.
 
+![Recording 2023-10-30 at 23 31 52](https://github.com/developmeh/ruby_streaming_ansi_banana/assets/159591/04d8efa3-a3bc-477e-84fe-1eac93b81a74)
+
+
 ## Getting Started
 
 Before running the application, make sure you have Ruby, Bundler, and `make` installed on your system.
