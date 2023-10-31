@@ -6,6 +6,8 @@ This application is a Sinatra-based web service with a `/live` endpoint. When in
 
 Before running the application, make sure you have Ruby, Bundler, and `make` installed on your system.
 
+This project provides a nix flake for dependencies and the convenience of direnv
+
 ### Installing Dependencies
 
 To install the required gems for the application, run:
