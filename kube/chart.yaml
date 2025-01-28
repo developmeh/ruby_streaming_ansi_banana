@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruby-dancing-banana-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruby-dancing-banana
+  template:
+    metadata:
+      labels:
+        app: ruby-dancing-banana
+    spec:
+      containers:
+        - name: server
+          image: ruby-dancing-banana:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4567
+              hostPort: 4567
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruby-dancing-banana
+spec:
+  selector:
+    app: ruby-dancing-banana
+  ports:
+    - protocol: TCP
+      port: 4567
+      targetPort: 4567
