@@ -20,14 +20,15 @@ get '/live' do
   return "use curl: `curl #{[request.host,request.port].join(':')}#{request.path}`" unless request.user_agent && request.user_agent.include?('curl')
 
   # Set chunked transfer encoding and plain text for ANSI support
-  headers "Content-Type" => "text/plain"
+  headers.delete('Content-Length')
+  headers "Content-Encoding" => "identity"
+  headers "Content-Type" => "text/event-stream"
   headers "Transfer-Encoding" => "chunked"
   headers "Connection" => "keep-alive"
   stream do |out|
     while out
       ascii_frames.each do |frame|
-        out << chunk(ansi_clear)
-        out << chunk(frame)
+        out << chunk(ansi_clear + frame)
         out.flush
         sleep 0.1
       end
