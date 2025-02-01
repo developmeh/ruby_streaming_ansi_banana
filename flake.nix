@@ -11,28 +11,35 @@
   outputs = { self, nixpkgs }:
     let
       supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+
       forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
+        system = system;  # Ensure the 'system' is passed into the function
         pkgs = import nixpkgs { inherit system; };
       });
-      buildpkgs = import nixpkgs { system = "x86_64-linux"; };
-      gems = buildpkgs.bundlerEnv {
+
+      # Define gems directly for each system
+      gems = system: let
+        buildpkgs = import nixpkgs { system = system; };
+      in buildpkgs.bundlerEnv {
         name = "ruby-dancing-banana";
         ruby = buildpkgs.ruby_3_2;
         gemfile = ./Gemfile;
         lockfile = ./Gemfile.lock;
         gemset = ./gemset.nix;
       };
-    in
-    {
-      defaultPackage.x86_64-linux =
-      buildpkgs.dockerTools.buildImage {
+
+      # Build the docker image for each system dynamically
+      buildImage = systemAttrs: let
+        buildpkgs = import nixpkgs { system = systemAttrs.system; };
+        gemEnv = gems systemAttrs.system;
+      in buildpkgs.dockerTools.buildImage {
         name = "ruby-dancing-banana";
         created = "now";
         tag = "latest";
         copyToRoot = buildpkgs.buildEnv {
           name = "image-root";
           paths = [
-            gems
+            gemEnv
           ];
           postBuild = ''
             mkdir -p $out/app
@@ -41,18 +48,26 @@
           '';
         };
         config = {
-          Cmd = [ "${gems.wrappedRuby}/bin/ruby" "/app/main.rb" "-o" "0.0.0.0" ];
+          Cmd = [ "${gemEnv.wrappedRuby}/bin/ruby" "/app/main.rb" "-o" "0.0.0.0" ];
           WorkingDir = "/app";
           ExposedPorts = { "4567/tcp" = {}; };
         };
       };
 
-      devShells = forEachSupportedSystem ({ pkgs }: {
+    in
+    {
+      # Default package for each supported system
+      defaultPackage = forEachSupportedSystem (systemAttrs: buildImage systemAttrs);
+
+      # DevShells for all supported systems
+      devShells = forEachSupportedSystem (systemAttrs: let
+        pkgs = systemAttrs.pkgs;
+      in {
         default = pkgs.mkShell {
           packages = with pkgs; [
             bundix
-            gems.wrappedRuby
-            gems
+            (gems systemAttrs.system).wrappedRuby
+            (gems systemAttrs.system)
           ];
         };
       });
